@@ -6,6 +6,7 @@ class InputTextWidget extends StatelessWidget {
   final String? assetReference;
   final String labelString;
   final bool isObscure;
+  
 
   const InputTextWidget({
     super.key,
