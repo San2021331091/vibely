@@ -2,17 +2,18 @@ import 'package:flutter/material.dart';
 import 'package:get/route_manager.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:simple_circular_progress_bar/simple_circular_progress_bar.dart';
-import 'package:vibely/screens/registration_screen.dart';
+import 'package:vibely/screens/login_screen.dart';
 import 'package:vibely/widgets/input_text_widget.dart';
 
-class LoginScreen extends StatefulWidget {
-  const LoginScreen({super.key});
+class RegistrationScreen extends StatefulWidget {
+  const RegistrationScreen({super.key});
 
   @override
-  State<LoginScreen> createState() => _LoginScreenState();
+  State<RegistrationScreen> createState() => _RegistrationScreenState();
 }
 
-class _LoginScreenState extends State<LoginScreen> {
+class _RegistrationScreenState extends State<RegistrationScreen> {
+  TextEditingController nameTextEditingController = TextEditingController();
   TextEditingController emailTextEditingController = TextEditingController();
   TextEditingController passWordTextEditingController = TextEditingController();
   bool showProgressBar = false;
@@ -26,12 +27,8 @@ class _LoginScreenState extends State<LoginScreen> {
             children: [
               SizedBox(height: 100),
 
-              Image.network(
-                "https://i.postimg.cc/XYwxWd41/tune.png",
-                width: 200,
-              ),
               Text(
-                "Welcome",
+                "Create Account",
                 style: GoogleFonts.acme(
                   fontSize: 34,
                   color: Colors.grey,
@@ -39,10 +36,39 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
               ),
               Text(
-                "Glad to see you!",
+                "to Get Started Now!",
                 style: GoogleFonts.aBeeZee(fontSize: 34, color: Colors.grey),
               ),
+
+              const SizedBox(height: 16),
+
+              GestureDetector(
+                onTap: () => {
+                  //allow user to choose images
+                },
+                child: const CircleAvatar(
+                  radius: 80,
+                  backgroundImage: NetworkImage(
+                    "https://i.postimg.cc/v8KJX4MJ/profile-avatar.png",
+                  ),
+                ),
+              ),
+
               const SizedBox(height: 30),
+
+              // Name Input
+              Container(
+                width: MediaQuery.of(context).size.width,
+                margin: const EdgeInsets.symmetric(horizontal: 20),
+                child: InputTextWidget(
+                  textEditingController: nameTextEditingController,
+                  labelString: "Username",
+                  icondata: Icons.person,
+                  isObscure: false,
+                ),
+              ),
+
+              const SizedBox(height: 25),
               //email input
               Container(
                 width: MediaQuery.of(context).size.width,
@@ -69,8 +95,7 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
 
               const SizedBox(height: 30),
-              // login button
-              //don't have an account? sign up
+              // sign up button
               showProgressBar == false
                   ? Column(
                       children: [
@@ -89,7 +114,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             },
                             child: Center(
                               child: Text(
-                                "Login",
+                                "Sign Up",
                                 style: GoogleFonts.aBeeZee(
                                   color: Colors.black,
                                   fontSize: 20,
@@ -101,12 +126,12 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
 
                         const SizedBox(height: 15),
-                        //not have an account? sign up button
+                        //already have an account? login button
                         Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             Text(
-                              "Don't have an account?",
+                              "Already have an account?",
                               style: GoogleFonts.abhayaLibre(
                                 color: Colors.grey,
                                 fontSize: 20,
@@ -114,11 +139,9 @@ class _LoginScreenState extends State<LoginScreen> {
                             ),
                             const SizedBox(width: 10),
                             InkWell(
-                              onTap: () => {
-                                Get.to(const RegistrationScreen())
-                              },
+                              onTap: () => {Get.to(const LoginScreen())},
                               child: Text(
-                                "Sign Up Now",
+                                "Login Now",
                                 style: GoogleFonts.poppins(
                                   fontSize: 16,
                                   color: Colors.white,
