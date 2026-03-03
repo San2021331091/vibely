@@ -18,8 +18,30 @@ class InputTextWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return TextField(
-      
+    return Padding(
+      padding: const EdgeInsets.all(6.0),
+      child: TextField(
+        controller: textEditingController,
+        decoration: InputDecoration(
+          labelText: labelString,
+          prefixIcon: icondata != null
+              ? Icon(icondata)
+              : Padding(
+                  padding: const EdgeInsets.all(8),
+                  child: Image.network(assetReference!, width: 10),
+                ),
+          labelStyle: TextStyle(fontSize: 18),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(6),
+            borderSide: BorderSide(color: Colors.blueGrey),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(6),
+            borderSide: BorderSide(color: Colors.blueGrey),
+          ),       
+        ),
+        obscureText: isObscure,
+      ),
     );
   }
 }

@@ -35,28 +35,33 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
               ),
               Text(
-                "Glad to see you",
-                style: GoogleFonts.abhayaLibre(
-                  fontSize: 34,
-                  color: Colors.grey,
+                "Glad to see you!",
+                style: GoogleFonts.aBeeZee(fontSize: 34, color: Colors.grey),
+              ),
+              const SizedBox(height: 30),
+              //email input
+              Container(
+                width: MediaQuery.of(context).size.width,
+                margin: const EdgeInsets.symmetric(horizontal: 20),
+                child: InputTextWidget(
+                  textEditingController: emailTextEditingController,
+                  labelString: "Email",
+                  icondata: Icons.email_outlined,
+                  isObscure: false,
                 ),
               ),
-              SizedBox(height: 30),
-
-              //email input
-              InputTextWidget(
-                textEditingController: emailTextEditingController,
-                labelString: "Email",
-                icondata: Icons.email_outlined,
-                isObscure: false,
-              ),
+              const SizedBox(height: 25),
 
               //password input
-               InputTextWidget(
-                textEditingController: passWordTextEditingController,
-                labelString: "Password",
-                icondata: Icons.email_outlined,
-                isObscure: true,
+              Container(
+                width: MediaQuery.of(context).size.width,
+                margin: const EdgeInsets.symmetric(horizontal: 20),
+                child: InputTextWidget(
+                  textEditingController: passWordTextEditingController,
+                  labelString: "Password",
+                  icondata: Icons.lock_outline,
+                  isObscure: true,
+                ),
               ),
             ],
           ),
