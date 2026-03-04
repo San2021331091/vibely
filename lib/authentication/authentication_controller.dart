@@ -4,7 +4,6 @@ import 'package:image_picker/image_picker.dart';
 import 'package:vibely/authentication/supabase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:vibely/screens/home_screen.dart';
-import 'package:vibely/screens/registration_screen.dart';
 import 'package:vibely/screens/login_screen.dart';
 import 'package:vibely/utils/img_upload.dart';
 
@@ -31,7 +30,15 @@ class AuthenticationController extends GetxController {
       );
     }
   }
+void checkUserLoggedIn() {
+  final user = SupabaseAuth.supabase.auth.currentUser;
 
+  if (user != null) {
+    Get.offAll(() => const HomeScreen());
+  } else {
+    Get.offAll(() => const LoginScreen());
+  }
+}
   Future<void> captureImageWithCamera() async {
     final pickedImageFile = await ImagePicker().pickImage(
       source: ImageSource.camera,
@@ -102,7 +109,7 @@ class AuthenticationController extends GetxController {
   Future<void> logout() async {
     try {
       await SupabaseAuth.supabase.auth.signOut();
-      Get.offAll(() => const RegistrationScreen());
+      Get.offAll(() => const LoginScreen());
       Get.snackbar("Logged out", "You have been logged out");
     } catch (e) {
       Get.snackbar("Error", "Logout failed: ${e.toString()}");
@@ -141,11 +148,9 @@ class AuthenticationController extends GetxController {
       );
 
       // Navigate to LoginScreen with optional info
-      Get.offAll(() => LoginScreen(
-            name: name,
-            email: email,
-            imageUrl: imageUrl,
-          ));
+      Get.offAll(
+        () => LoginScreen(name: name, email: email, imageUrl: imageUrl),
+      );
     } catch (e) {
       Get.snackbar(
         "Error",

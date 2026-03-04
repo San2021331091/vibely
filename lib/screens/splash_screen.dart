@@ -1,9 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:get/route_manager.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:vibely/screens/home_screen.dart';
-import 'package:vibely/screens/login_screen.dart';
+import 'package:vibely/authentication/authentication_controller.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -19,53 +16,45 @@ class _SplashScreenState extends State<SplashScreen>
   late Animation<double> _logoScale;
   late Animation<double> _textFade;
   late Animation<Offset> _textSlide;
+  final authenticationController = AuthenticationController.instanceAuth;
 
   @override
   void initState() {
     super.initState();
 
-    // Animation controller
     _controller = AnimationController(
-      duration: const Duration(seconds: 6),
+      duration: const Duration(seconds: 10),
       vsync: this,
     );
 
-    // Logo fade
     _logoFade = Tween<double>(begin: 0, end: 1).animate(
-      CurvedAnimation(parent: _controller, curve: const Interval(0, 0.5, curve: Curves.easeIn)),
+      CurvedAnimation(parent: _controller, curve: const Interval(0, 0.5)),
     );
 
-    // Logo scale (pop)
-    _logoScale = TweenSequence<double>([
-      TweenSequenceItem(tween: Tween(begin: 0.8, end: 1.2), weight: 50),
-      TweenSequenceItem(tween: Tween(begin: 1.2, end: 1.0), weight: 50),
-    ]).animate(
-      CurvedAnimation(parent: _controller, curve: const Interval(0, 0.5, curve: Curves.easeInOut)),
-    );
+    _logoScale =
+        TweenSequence<double>([
+          TweenSequenceItem(tween: Tween(begin: 0.8, end: 1.2), weight: 50),
+          TweenSequenceItem(tween: Tween(begin: 1.2, end: 1.0), weight: 50),
+        ]).animate(
+          CurvedAnimation(parent: _controller, curve: const Interval(0, 0.5)),
+        );
 
-    // Text fade (starts after logo)
     _textFade = Tween<double>(begin: 0, end: 1).animate(
-      CurvedAnimation(parent: _controller, curve: const Interval(0.5, 1.0, curve: Curves.easeIn)),
+      CurvedAnimation(parent: _controller, curve: const Interval(0.5, 1.0)),
     );
 
-    // Text slide up
-    _textSlide = Tween<Offset>(begin: const Offset(0, 0.3), end: Offset.zero).animate(
-      CurvedAnimation(parent: _controller, curve: const Interval(0.5, 1.0, curve: Curves.easeOut)),
-    );
+    _textSlide = Tween<Offset>(begin: const Offset(0, 0.3), end: Offset.zero)
+        .animate(
+          CurvedAnimation(parent: _controller, curve: const Interval(0.5, 1.0)),
+        );
 
     _controller.forward();
 
-    // Navigate after 10 seconds
+
     Future.delayed(const Duration(seconds: 10), () {
       if (!mounted) return;
 
-      final user = Supabase.instance.client.auth.currentUser;
-
-      if (user != null) {
-        Get.off(() => const HomeScreen());
-      } else {
-        Get.off(() => const LoginScreen());
-      }
+      AuthenticationController.instanceAuth.checkUserLoggedIn();
     });
   }
 

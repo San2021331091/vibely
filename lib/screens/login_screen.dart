@@ -11,20 +11,33 @@ class LoginScreen extends StatefulWidget {
   final String? name;
   final String? email;
   final String? imageUrl;
+
   const LoginScreen({super.key, this.name, this.email, this.imageUrl});
+
   @override
   State<LoginScreen> createState() => _LoginScreenState();
 }
 
 class _LoginScreenState extends State<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
+
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
+
   final FormValidate formValidate = FormValidate();
 
-  // Access the controller
   final AuthenticationController authController =
       AuthenticationController.instanceAuth;
+
+  // ================= LOGIN FUNCTION =================
+  void handleLogin() {
+    if (_formKey.currentState!.validate()) {
+      authController.login(
+        email: emailController.text.trim(),
+        password: passwordController.text.trim(),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -60,7 +73,6 @@ class _LoginScreenState extends State<LoginScreen> {
 
                 // ================= EMAIL FIELD =================
                 Container(
-                  width: MediaQuery.of(context).size.width,
                   margin: const EdgeInsets.symmetric(horizontal: 20),
                   child: InputTextWidget(
                     textEditingController: emailController,
@@ -76,7 +88,6 @@ class _LoginScreenState extends State<LoginScreen> {
                 // ================= PASSWORD FIELD =================
                 Obx(
                   () => Container(
-                    width: MediaQuery.of(context).size.width,
                     margin: const EdgeInsets.symmetric(horizontal: 20),
                     child: InputTextWidget(
                       textEditingController: passwordController,
@@ -117,14 +128,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                 ),
                               ),
                               child: InkWell(
-                                onTap: () {
-                                  if (_formKey.currentState!.validate()) {
-                                    authController.login(
-                                      email: emailController.text,
-                                      password: passwordController.text,
-                                    );
-                                  }
-                                },
+                                onTap: handleLogin,
                                 child: Center(
                                   child: Text(
                                     "Login",
@@ -153,7 +157,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                 const SizedBox(width: 10),
                                 InkWell(
                                   onTap: () {
-                                    Get.to(() => const RegistrationScreen());
+                                    Get.off(() => const RegistrationScreen());
                                   },
                                   child: Text(
                                     "Sign Up Now",
