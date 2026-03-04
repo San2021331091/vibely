@@ -17,6 +17,8 @@ class RegistrationScreen extends StatefulWidget {
 }
 
 class _RegistrationScreenState extends State<RegistrationScreen> {
+  final _formKey = GlobalKey<FormState>();
+
   final TextEditingController nameTextEditingController =
       TextEditingController();
   final TextEditingController emailTextEditingController =
@@ -25,27 +27,62 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
       TextEditingController();
 
   bool showProgressBar = false;
+  bool obscurePassword = true;
 
-  final authenticationController =
-      AuthenticationController.instanceAuth;
+  final authenticationController = AuthenticationController.instanceAuth;
 
+  // ================= VALIDATORS =================
 
-
-  /// 🔥 Handle Sign Up
-  Future<void> handleSignUp() async {
-    if (nameTextEditingController.text.isEmpty ||
-        emailTextEditingController.text.isEmpty ||
-        passWordTextEditingController.text.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("All fields are required")),
-      );
-      return;
+  String? validateName(String? value) {
+    if (value == null || value.trim().isEmpty) {
+      return "Username is required";
     }
+    if (value.trim().length < 3) {
+      return "Minimum 3 characters required";
+    }
+    return null;
+  }
+
+  String? validateEmail(String? value) {
+    if (value == null || value.trim().isEmpty) {
+      return "Email is required";
+    }
+
+    final emailRegex = RegExp(
+      r"^[a-zA-Z0-9.a-zA-Z0-9.!#$%&'*+\-/=?^_`{|}~]+@[a-zA-Z0-9]+\.[a-zA-Z]+",
+    );
+
+    if (!emailRegex.hasMatch(value.trim())) {
+      return "Enter valid email";
+    }
+
+    return null;
+  }
+
+  String? validatePassword(String? value) {
+    if (value == null || value.isEmpty) {
+      return "Password is required";
+    }
+
+    if (value.length < 8) {
+      return "Password must be at least 8 characters";
+    }
+
+    if (!RegExp(r'^(?=.*[A-Z])(?=.*[0-9]).{8,}$').hasMatch(value)) {
+      return "Must contain 1 uppercase & 1 number";
+    }
+
+    return null;
+  }
+
+  // ================= SIGN UP =================
+
+  Future<void> handleSignUp() async {
+    if (!_formKey.currentState!.validate()) return;
 
     setState(() => showProgressBar = true);
 
     try {
-      // 1️⃣ Create user in Supabase Auth
       final authResponse = await SupabaseAuth.signUp(
         email: emailTextEditingController.text.trim(),
         password: passWordTextEditingController.text.trim(),
@@ -57,7 +94,6 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
         throw Exception("Sign up failed");
       }
 
-      // 2️⃣ Upload profile image to ImgBB
       String? imageUrl;
 
       if (authenticationController.profileImage != null) {
@@ -66,7 +102,6 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
         );
       }
 
-      // 3️⃣ Create user model
       final newUser = User(
         uid: supabaseUser.id,
         name: nameTextEditingController.text.trim(),
@@ -74,19 +109,22 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
         image: imageUrl,
       );
 
-      // 4️⃣ Insert into Supabase users table
-      await SupabaseAuth.supabase
-          .from("users")
-          .insert(newUser.toJson());
+      await SupabaseAuth.supabase.from("users").insert(newUser.toJson());
 
-      // 5️⃣ Go to Login screen
+      Get.snackbar(
+        "Success",
+        "You have successfully signed up",
+        backgroundColor: Colors.green,
+        colorText: Colors.white,
+      );
+
       Get.offAll(() => const LoginScreen());
-
     } catch (e) {
-      debugPrint("Sign Up Error: $e");
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Sign up failed: $e")),
+      Get.snackbar(
+        "Error",
+        e.toString(),
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
       );
     } finally {
       setState(() => showProgressBar = false);
@@ -97,202 +135,184 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: SingleChildScrollView(
-        child: Center(
-          child: Column(
-            children: [
-              const SizedBox(height: 100),
+        child: Form(
+          key: _formKey,
+          child: Center(
+            child: Column(
+              children: [
+                const SizedBox(height: 100),
 
-              Text(
-                "Create Account",
-                style: GoogleFonts.acme(
-                  fontSize: 34,
-                  color: Colors.grey,
-                  fontWeight: FontWeight.bold,
+                Text(
+                  "Create Account",
+                  style: GoogleFonts.acme(
+                    fontSize: 34,
+                    color: Colors.grey,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
-              ),
-              Text(
-                "To Get Started Now!",
-                style: GoogleFonts.aBeeZee(
-                  fontSize: 34,
-                  color: Colors.grey,
+                Text(
+                  "To Get Started Now!",
+                  style: GoogleFonts.aBeeZee(fontSize: 34, color: Colors.grey),
                 ),
-              ),
 
-              const SizedBox(height: 16),
+                const SizedBox(height: 16),
 
-              /// Profile Image
-              CircleAvatar(
-                radius: 80,
-                backgroundImage:
-                    authenticationController.profileImage != null
-                        ? FileImage(authenticationController.profileImage!)
-                        : const NetworkImage(
-                                "https://i.postimg.cc/v8KJX4MJ/profile-avatar.png")
+                // Profile Image
+                CircleAvatar(
+                  radius: 80,
+                  backgroundImage: authenticationController.profileImage != null
+                      ? FileImage(authenticationController.profileImage!)
+                      : const NetworkImage(
+                              "https://i.postimg.cc/v8KJX4MJ/profile-avatar.png",
+                            )
                             as ImageProvider,
-              ),
-
-              const SizedBox(height: 10),
-
-              /// Camera Button
-              IconButton(
-                icon: const Icon(
-                  Icons.camera_alt,
-                  size: 40,
-                  color: Colors.grey,
                 ),
-                onPressed: () {
-                  showModalBottomSheet(
-                    context: context,
-                    builder: (_) => SizedBox(
-                      height: 120,
-                      child: Column(
-                        children: [
-                          ListTile(
-                            leading: const Icon(Icons.camera),
-                            title: const Text("Camera"),
-                            onTap: () async {
-                              Navigator.pop(context);
-                              await authenticationController
-                                  .captureImageWithCamera();
-                              setState(() {});
-                            },
-                          ),
-                          ListTile(
-                            leading:
-                                const Icon(Icons.photo_library),
-                            title: const Text("Gallery"),
-                            onTap: () async {
-                              Navigator.pop(context);
-                              await authenticationController
-                                  .chooseImageFromGallery();
-                              setState(() {});
-                            },
-                          ),
-                        ],
-                      ),
-                    ),
-                  );
-                },
-              ),
 
-              const SizedBox(height: 30),
+                const SizedBox(height: 10),
 
-              /// Username
-              Container(
-                margin:
-                    const EdgeInsets.symmetric(horizontal: 20),
-                child: InputTextWidget(
-                  textEditingController:
-                      nameTextEditingController,
-                  labelString: "Username",
-                  icondata: Icons.person,
-                  isObscure: false,
-                ),
-              ),
-
-              const SizedBox(height: 25),
-
-              /// Email
-              Container(
-                margin:
-                    const EdgeInsets.symmetric(horizontal: 20),
-                child: InputTextWidget(
-                  textEditingController:
-                      emailTextEditingController,
-                  labelString: "Email",
-                  icondata: Icons.email_outlined,
-                  isObscure: false,
-                ),
-              ),
-
-              const SizedBox(height: 25),
-
-              /// Password
-              Container(
-                margin:
-                    const EdgeInsets.symmetric(horizontal: 20),
-                child: InputTextWidget(
-                  textEditingController:
-                      passWordTextEditingController,
-                  labelString: "Password",
-                  icondata: Icons.lock_outline,
-                  isObscure: true,
-                ),
-              ),
-
-              const SizedBox(height: 30),
-
-              /// Sign Up Button
-              showProgressBar == false
-                  ? Column(
-                      children: [
-                        Container(
-                          width:
-                              MediaQuery.of(context).size.width - 38,
-                          height: 50,
-                          decoration:
-                              const BoxDecoration(
-                            color: Colors.white,
-                            borderRadius:
-                                BorderRadius.all(
-                                    Radius.circular(10)),
-                          ),
-                          child: InkWell(
-                            onTap: handleSignUp,
-                            child: Center(
-                              child: Text(
-                                "Sign Up",
-                                style:
-                                    GoogleFonts.aBeeZee(
-                                  color: Colors.black,
-                                  fontSize: 20,
-                                  fontWeight:
-                                      FontWeight.bold,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-
-                        const SizedBox(height: 15),
-
-                        Row(
-                          mainAxisAlignment:
-                              MainAxisAlignment.center,
+                IconButton(
+                  icon: const Icon(
+                    Icons.camera_alt,
+                    size: 40,
+                    color: Colors.grey,
+                  ),
+                  onPressed: () {
+                    showModalBottomSheet(
+                      context: context,
+                      builder: (_) => SizedBox(
+                        height: 120,
+                        child: Column(
                           children: [
-                            Text(
-                              "Already have an account?",
-                              style:
-                                  GoogleFonts.abhayaLibre(
-                                color: Colors.grey,
-                                fontSize: 20,
-                              ),
-                            ),
-                            const SizedBox(width: 10),
-                            InkWell(
-                              onTap: () => Get.to(
-                                  const LoginScreen()),
-                              child: Text(
-                                "Login Now",
-                                style:
-                                    GoogleFonts.poppins(
-                                  fontSize: 16,
+                            ListTile(
+                              leading: const Icon(Icons.camera),
+                              title: Text(
+                                "Camera",
+                                style: GoogleFonts.acme(
                                   color: Colors.white,
-                                  fontWeight:
-                                      FontWeight.bold,
+                                  fontSize: 22,
                                 ),
                               ),
+                              onTap: () async {
+                                Navigator.pop(context);
+                                await authenticationController
+                                    .captureImageWithCamera();
+                                setState(() {});
+                              },
+                            ),
+                            ListTile(
+                              leading: const Icon(Icons.photo_library),
+                              title: Text(
+                                "Gallery",
+                                style: GoogleFonts.acme(
+                                  color: Colors.white,
+                                  fontSize: 22,
+                                ),
+                              ),
+                              onTap: () async {
+                                Navigator.pop(context);
+                                await authenticationController
+                                    .chooseImageFromGallery();
+                                setState(() {});
+                              },
                             ),
                           ],
                         ),
-                      ],
-                    )
-                  : const SizedBox(
-                      height: 80,
-                      child:
-                          SimpleCircularProgressBar(),
+                      ),
+                    );
+                  },
+                ),
+
+                const SizedBox(height: 30),
+
+                // Username
+                Container(
+                  margin: const EdgeInsets.symmetric(horizontal: 20),
+                  child: InputTextWidget(
+                    textEditingController: nameTextEditingController,
+                    labelString: "Username",
+                    icondata: Icons.person,
+                    isObscure: false,
+                    validator: validateName,
+                  ),
+                ),
+
+                const SizedBox(height: 25),
+
+                // Email
+                Container(
+                  margin: const EdgeInsets.symmetric(horizontal: 20),
+                  child: InputTextWidget(
+                    textEditingController: emailTextEditingController,
+                    labelString: "Email",
+                    icondata: Icons.email_outlined,
+                    isObscure: false,
+                    validator: validateEmail,
+                  ),
+                ),
+
+                const SizedBox(height: 25),
+
+                // Password
+                Container(
+                  margin: const EdgeInsets.symmetric(horizontal: 20),
+                  child: InputTextWidget(
+                    textEditingController: passWordTextEditingController,
+                    labelString: "Password",
+                    icondata: Icons.lock_outline,
+                    isObscure: obscurePassword,
+                    validator: validatePassword,
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                        obscurePassword
+                            ? Icons.visibility_off
+                            : Icons.visibility,
+                      ),
+                      onPressed: () {
+                        setState(() {
+                          obscurePassword = !obscurePassword;
+                        });
+                      },
                     ),
-            ],
+                  ),
+                ),
+
+                const SizedBox(height: 30),
+
+                showProgressBar == false
+                    ? Column(
+                        children: [
+                          Container(
+                            width: MediaQuery.of(context).size.width - 38,
+                            height: 50,
+                            decoration: const BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.all(
+                                Radius.circular(10),
+                              ),
+                            ),
+                            child: InkWell(
+                              onTap: handleSignUp,
+                              child: Center(
+                                child: Text(
+                                  "Sign Up",
+                                  style: GoogleFonts.aBeeZee(
+                                    color: Colors.black,
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 15),
+                        ],
+                      )
+                    : const SizedBox(
+                        height: 80,
+                        child: SimpleCircularProgressBar(),
+                      ),
+              ],
+            ),
           ),
         ),
       ),
