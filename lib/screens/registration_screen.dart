@@ -6,7 +6,6 @@ import 'package:vibely/authentication/authentication_controller.dart';
 import 'package:vibely/screens/login_screen.dart';
 import 'package:vibely/utils/img_upload.dart';
 import 'package:vibely/widgets/input_text_widget.dart';
-import 'package:vibely/models/user.dart';
 import 'package:vibely/authentication/supabase_auth.dart';
 
 class RegistrationScreen extends StatefulWidget {
@@ -77,59 +76,50 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
 
   // ================= SIGN UP =================
 
-  Future<void> handleSignUp() async {
-    if (!_formKey.currentState!.validate()) return;
+Future<void> handleSignUp() async {
+  if (!_formKey.currentState!.validate()) return;
 
-    setState(() => showProgressBar = true);
+  setState(() => showProgressBar = true);
 
-    try {
-      final authResponse = await SupabaseAuth.signUp(
-        email: emailTextEditingController.text.trim(),
-        password: passWordTextEditingController.text.trim(),
-      );
+  try {
+    final authResponse = await SupabaseAuth.signUp(
+      email: emailTextEditingController.text.trim(),
+      password: passWordTextEditingController.text.trim(),
+    );
 
-      final supabaseUser = authResponse.user;
+    final supabaseUser = authResponse.user;
 
-      if (supabaseUser == null) {
-        throw Exception("Sign up failed");
-      }
-
-      String? imageUrl;
-
-      if (authenticationController.profileImage != null) {
-        imageUrl = await uploadImageToImgBB(
-          authenticationController.profileImage!,
-        );
-      }
-
-      final newUser = User(
-        uid: supabaseUser.id,
-        name: nameTextEditingController.text.trim(),
-        email: emailTextEditingController.text.trim(),
-        image: imageUrl,
-      );
-
-      await SupabaseAuth.supabase.from("users").insert(newUser.toJson());
-
-      Get.snackbar(
-        "Success",
-        "You have successfully signed up",
-        backgroundColor: Colors.green,
-        colorText: Colors.white,
-      );
-
-      Get.offAll(() => const LoginScreen());
-    } catch (e) {
-      Get.snackbar(
-        "Error",
-        e.toString(),
-        backgroundColor: Colors.red,
-        colorText: Colors.white,
-      );
-    } finally {
-      setState(() => showProgressBar = false);
+    if (supabaseUser == null) {
+      throw Exception("Sign up failed");
     }
+    if (authenticationController.profileImage != null) {
+     final imageUrl = await uploadImageToImgBB(
+        authenticationController.profileImage!,
+      );
+    
+    Get.snackbar(
+      "Success",
+      "You have successfully signed up.",
+      backgroundColor: Colors.green,
+      colorText: Colors.white,
+    );
+
+   Get.offAll(() => LoginScreen(
+  name: nameTextEditingController.text.trim(),
+  email: emailTextEditingController.text.trim(),
+  imageUrl: imageUrl,
+));}
+  } catch (e) {
+    Get.snackbar(
+      "Error",
+      e.toString(),
+      backgroundColor: Colors.red,
+      colorText: Colors.white,
+    );
+  } finally {
+    setState(() => showProgressBar = false);
   }
+}
 
   @override
   Widget build(BuildContext context) {
