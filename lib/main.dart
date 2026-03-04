@@ -1,25 +1,25 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:get/route_manager.dart';
-import 'package:vibely/screens/login_screen.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:get/get.dart';
+import 'package:vibely/authentication/authentication_controller.dart';
+import 'package:vibely/authentication/supabase_auth.dart';
+import 'package:vibely/app.dart';
 
-void main() {
-  runApp(const MyApp());
-}
+void main() async {
+  
+   WidgetsFlutterBinding.ensureInitialized();
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+  // Load .env before using Supabase
+  await dotenv.load(fileName: ".env");
+    // Register the AuthenticationController
+  Get.put(AuthenticationController());
 
-  // This widget is the root of your application.
-  @override
-  Widget build(BuildContext context) {
-    return GetMaterialApp(
-      title: 'Vibely',
-      theme: ThemeData.dark().copyWith(
-        scaffoldBackgroundColor: Colors.black
-      ),
-      debugShowCheckedModeBanner: false,
-      home: const LoginScreen(),
-    );
+  try {
+    await SupabaseAuth.initialize();
+    runApp(const MyApp());
+  } on FileSystemException catch (e) {
+     debugPrint(e.toString());
   }
 }
 
