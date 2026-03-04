@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 
-class FollowingVideo extends StatefulWidget {
-  const FollowingVideo({super.key});
+class FollowingVideoScreen extends StatefulWidget {
+  const FollowingVideoScreen({super.key});
 
   @override
-  State<FollowingVideo> createState() => _FollowingVideoState();
+  State<FollowingVideoScreen> createState() => _FollowingVideoScreenState();
 }
 
-class _FollowingVideoState extends State<FollowingVideo> {
+class _FollowingVideoScreenState extends State<FollowingVideoScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
