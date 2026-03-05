@@ -35,6 +35,8 @@ class _LoginScreenState extends State<LoginScreen> {
       authController.login(
         email: emailController.text.trim(),
         password: passwordController.text.trim(),
+        name: widget.name,
+        imageUrl: widget.imageUrl,
       );
     }
   }
@@ -114,7 +116,8 @@ class _LoginScreenState extends State<LoginScreen> {
                   () => authController.isLoading.value
                       ? const SizedBox(
                           height: 80,
-                          child: SimpleCircularProgressBar( progressColors: [
+                          child: SimpleCircularProgressBar(
+                            progressColors: [
                               Colors.purple,
                               Colors.blue,
                               Colors.cyan,
@@ -122,7 +125,8 @@ class _LoginScreenState extends State<LoginScreen> {
                             size: 160,
                             backColor: Colors.blueGrey,
                             progressStrokeWidth: 12,
-                            backStrokeWidth: 12,),
+                            backStrokeWidth: 12,
+                          ),
                         )
                       : Column(
                           children: [

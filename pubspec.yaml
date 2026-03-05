@@ -19,10 +19,9 @@ dependencies:
   image_picker: ^1.2.1
   video_player: ^2.10.1
   video_compress: ^3.1.4
+  uuid: ^4.5.2
+  cloudinary_public: ^0.23.1
   
-
-
-
 dev_dependencies:
   flutter_test:
     sdk: flutter

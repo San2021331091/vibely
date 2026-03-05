@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:vibely/authentication/supabase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:vibely/models/user.dart';
 import 'package:vibely/screens/home_screen.dart';
 import 'package:vibely/screens/login_screen.dart';
 import 'package:vibely/utils/img_upload.dart';
@@ -30,15 +31,17 @@ class AuthenticationController extends GetxController {
       );
     }
   }
-void checkUserLoggedIn() {
-  final user = SupabaseAuth.supabase.auth.currentUser;
 
-  if (user != null) {
-    Get.offAll(() => const HomeScreen());
-  } else {
-    Get.offAll(() => const LoginScreen());
+  void checkUserLoggedIn() {
+    final user = SupabaseAuth.supabase.auth.currentUser;
+
+    if (user != null) {
+      Get.offAll(() => const HomeScreen());
+    } else {
+      Get.offAll(() => const LoginScreen());
+    }
   }
-}
+
   Future<void> captureImageWithCamera() async {
     final pickedImageFile = await ImagePicker().pickImage(
       source: ImageSource.camera,
@@ -59,7 +62,12 @@ void checkUserLoggedIn() {
   }
 
   // ====================== LOGIN ======================
-  Future<void> login({required String email, required String password}) async {
+  Future<void> login({
+    required String email,
+    required String password,
+    String? name,
+    String? imageUrl,
+  }) async {
     isLoading.value = true;
     try {
       final response = await SupabaseAuth.supabase.auth.signInWithPassword(
@@ -76,16 +84,15 @@ void checkUserLoggedIn() {
           .select()
           .eq('uid', user.id)
           .maybeSingle();
-
       if (existingUser == null) {
-        await SupabaseAuth.supabase.from('users').insert({
-          'uid': user.id,
-          'name': "New User",
-          'email': user.email,
-          'image': null,
-        });
+        User userInfo = User(
+          uid: user.id,
+          name: name ?? "User_${user.id}",
+          email: user.email,
+          image: imageUrl,
+        );
+        await SupabaseAuth.supabase.from('users').insert(userInfo.toJson());
       }
-
       Get.snackbar(
         "Success",
         "Login successful",
