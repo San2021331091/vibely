@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:vibely/authentication/authentication_controller.dart';
+import 'package:vibely/controller/authentication_controller.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});

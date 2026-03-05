@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:simple_circular_progress_bar/simple_circular_progress_bar.dart';
-import 'package:vibely/authentication/authentication_controller.dart';
+import 'package:vibely/controller/authentication_controller.dart';
 import 'package:vibely/screens/login_screen.dart';
 import 'package:vibely/widgets/form_validate.dart';
 import 'package:vibely/widgets/input_text_widget.dart';
@@ -180,7 +180,17 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                   () => authenticationController.isLoading.value
                       ? const SizedBox(
                           height: 80,
-                          child: SimpleCircularProgressBar(),
+                          child: SimpleCircularProgressBar(
+                            progressColors: [
+                              Colors.purple,
+                              Colors.blue,
+                              Colors.cyan,
+                            ],
+                            size: 160,
+                            backColor: Colors.blueGrey,
+                            progressStrokeWidth: 12,
+                            backStrokeWidth: 12,
+                          ),
                         )
                       : Column(
                           children: [

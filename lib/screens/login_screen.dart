@@ -5,7 +5,7 @@ import 'package:simple_circular_progress_bar/simple_circular_progress_bar.dart';
 import 'package:vibely/screens/registration_screen.dart';
 import 'package:vibely/widgets/form_validate.dart';
 import 'package:vibely/widgets/input_text_widget.dart';
-import 'package:vibely/authentication/authentication_controller.dart';
+import 'package:vibely/controller/authentication_controller.dart';
 
 class LoginScreen extends StatefulWidget {
   final String? name;
@@ -114,7 +114,15 @@ class _LoginScreenState extends State<LoginScreen> {
                   () => authController.isLoading.value
                       ? const SizedBox(
                           height: 80,
-                          child: SimpleCircularProgressBar(),
+                          child: SimpleCircularProgressBar( progressColors: [
+                              Colors.purple,
+                              Colors.blue,
+                              Colors.cyan,
+                            ],
+                            size: 160,
+                            backColor: Colors.blueGrey,
+                            progressStrokeWidth: 12,
+                            backStrokeWidth: 12,),
                         )
                       : Column(
                           children: [
