@@ -1,5 +1,7 @@
 class User {
   final String? name, uid, image, email, youtube, facebook, twitter, instagram;
+  // ignore: non_constant_identifier_names
+  final int? followers_count;
 
   User({
     this.name,
@@ -10,6 +12,8 @@ class User {
     this.facebook,
     this.twitter,
     this.instagram,
+    // ignore: non_constant_identifier_names
+    this.followers_count,
   });
 
   // Create User from row data
@@ -23,17 +27,19 @@ class User {
       facebook: data["facebook"] as String?,
       twitter: data["twitter"] as String?,
       instagram: data["instagram"] as String?,
+      followers_count: data["followers_count"] as int?,
     );
   }
 
   Map<String, dynamic> toJson() => {
-        "name": name,
-        "uid": uid,
-        "image": image,
-        "email": email,
-        "youtube": youtube,
-        "facebook": facebook,
-        "twitter": twitter,
-        "instagram": instagram,
-      };
+    "name": name,
+    "uid": uid,
+    "image": image,
+    "email": email,
+    "youtube": youtube,
+    "facebook": facebook,
+    "twitter": twitter,
+    "instagram": instagram,
+    "followers_count": followers_count,
+  };
 }

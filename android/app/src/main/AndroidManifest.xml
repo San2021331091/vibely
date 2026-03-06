@@ -11,6 +11,9 @@
     permission-->
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+
+    <!-- Android 13+ video access -->
+<uses-permission android:name="android.permission.READ_MEDIA_VIDEO"/>
     <application
         android:label="Vibely"
         android:name="${applicationName}"

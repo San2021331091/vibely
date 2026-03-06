@@ -1,44 +1,40 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
 import 'package:vibely/authentication/supabase_auth.dart';
 import 'package:vibely/models/video.dart';
 import 'package:vibely/screens/home_screen.dart';
+import 'package:vibely/utils/img_upload.dart';
 import 'package:video_compress/video_compress.dart';
-import 'package:dio/dio.dart' as dio;
-import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'package:cloudinary_public/cloudinary_public.dart';
+import 'package:video_thumbnail/video_thumbnail.dart';
+
 
 class UploadController extends GetxController {
-
-  final dio.Dio _dio = dio.Dio(
-    dio.BaseOptions(
-      connectTimeout: const Duration(minutes: 2),
-      receiveTimeout: const Duration(minutes: 2),
-    ),
-  );
-
   RxBool isUploading = false.obs;
   RxDouble uploadProgress = 0.0.obs;
 
-  late final String cloudName;
-  late final String uploadPreset;
   late final String imgbbKey;
 
-  @override
-  void onInit() {
-    super.onInit();
+  final int maxVideoSizeMB = 50;
 
-    cloudName = dotenv.env['CLOUDINARY_CLOUD_NAME'] ?? "";
-    uploadPreset = dotenv.env['CLOUDINARY_UPLOAD_PRESET'] ?? "";
-    imgbbKey = dotenv.env['IMG_BB_API_KEY'] ?? "";
+  /// PROGRESS SIMULATION
+  void simulateProgress() async {
+    while (isUploading.value && uploadProgress.value < 0.9) {
+      await Future.delayed(const Duration(milliseconds: 400));
+
+      uploadProgress.value += 0.03;
+
+      if (uploadProgress.value > 0.9) {
+        uploadProgress.value = 0.9;
+      }
+    }
   }
 
   /// COMPRESS VIDEO
   Future<File?> compressVideoFile(String videoFilePath) async {
     try {
-
       final compressedVideo = await VideoCompress.compressVideo(
         videoFilePath,
         quality: VideoQuality.MediumQuality,
@@ -46,165 +42,112 @@ class UploadController extends GetxController {
       );
 
       if (compressedVideo == null || compressedVideo.file == null) {
-        debugPrint("Video compression failed");
-        return null;
+        throw Exception("Video compression failed");
+      }
+
+      final fileSizeMB =
+          await compressedVideo.file!.length() ~/ (1024 * 1024);
+
+      if (fileSizeMB > maxVideoSizeMB) {
+        throw Exception("Video is too large. Max allowed size is $maxVideoSizeMB MB");
       }
 
       return compressedVideo.file;
 
     } catch (e) {
-      debugPrint("Compression error: $e");
-      return null;
+      throw Exception("Video compression error: $e");
     }
   }
 
   /// GENERATE THUMBNAIL
   Future<File?> getThumbNailImage(String videoFilePath) async {
+
     try {
 
-      final thumbnail = await VideoCompress.getFileThumbnail(
-        videoFilePath,
+      final thumbnailPath = await VideoThumbnail.thumbnailFile(
+        video: videoFilePath,
+        imageFormat: ImageFormat.JPEG,
         quality: 75,
       );
 
-      if (!await thumbnail.exists()) {
-        debugPrint("Thumbnail generation failed");
-        return null;
+      if (thumbnailPath == null) {
+        throw Exception("Thumbnail generation returned null");
       }
 
-      return thumbnail;
+      final thumbnailFile = File(thumbnailPath);
+
+      if (!await thumbnailFile.exists()) {
+        throw Exception("Thumbnail file does not exist");
+      }
+
+      return thumbnailFile;
 
     } catch (e) {
-      debugPrint("Thumbnail error: $e");
-      return null;
+      throw Exception("Thumbnail error: $e");
     }
   }
 
-  /// UPLOAD VIDEO TO CLOUDINARY
-  Future<String?> uploadVideoToCloudinary({required File file}) async {
+  /// UPLOAD VIDEO TO SUPABASE
+  Future<String> uploadVideoToSupabase({
+    required File file,
+    required String videoId,
+  }) async {
+
     try {
 
-      final cloudinary = CloudinaryPublic(
-        cloudName,
-        uploadPreset,
-        cache: false,
-      );
+      final supabase = SupabaseAuth.supabase;
 
-      CloudinaryResponse response = await cloudinary.uploadFile(
-        CloudinaryFile.fromFile(
-          file.path,
-          resourceType: CloudinaryResourceType.Video, 
-        ),
-        onProgress: (count, total) {
+      String filePath = "$videoId.mp4";
 
-          if (total != 0) {
-            uploadProgress.value = count / total;
-          }
+      await supabase.storage
+          .from('videos')
+          .upload(
+            filePath,
+            file,
+            fileOptions: const FileOptions(upsert: true),
+          );
 
-        },
-      );
-
-      Get.snackbar("Sucess", "Upload Successful");
-
-      return response.secureUrl;
-
-    } on CloudinaryException catch (e) {
- 
-       Get.snackbar("Error","Cloudinary Exception: ${e.message}");
-      debugPrint("Cloudinary Request: ${e.request}");
+      return supabase.storage
+          .from('videos')
+          .getPublicUrl(filePath);
 
     } catch (e) {
-
-      debugPrint("Cloudinary Upload Error: $e");
-
+      throw Exception("Supabase video upload error: $e");
     }
-
-    return null;
-  }
-
-  /// UPLOAD THUMBNAIL TO IMGBB
-  Future<String?> uploadThumbnailToImgBB(File file) async {
-    try {
-
-      String url = "https://api.imgbb.com/1/upload?key=$imgbbKey";
-
-      dio.FormData formData = dio.FormData.fromMap({
-
-        "image": await dio.MultipartFile.fromFile(
-          file.path,
-          filename: file.path.split('/').last,
-        ),
-
-      });
-
-      dio.Response response = await _dio.post(url, data: formData);
-
-      if (response.statusCode == 200) {
-        return response.data["data"]["url"];
-      }
-
-      debugPrint("ImgBB error: ${response.data}");
-
-    } catch (e) {
-
-      debugPrint("ImgBB Upload Error: $e");
-
-    }
-
-    return null;
   }
 
   /// UPLOAD VIDEO + THUMBNAIL
-  Future<Map<String, String?>> uploadVideoWithThumbnail(
+  Future<Map<String, String>> uploadVideoWithThumbnail(
       String videoID,
       String videoFilePath,
       ) async {
 
     try {
 
-      /// Compress
-      File? compressedVideo = await compressVideoFile(videoFilePath);
+      final compressedVideo = await compressVideoFile(videoFilePath);
 
-      if (compressedVideo == null) {
-        throw Exception("Video compression failed");
-      }
+      final thumbnailFile =
+          await getThumbNailImage(compressedVideo!.path);
 
-      /// Upload Video
-      String? videoUrl = await uploadVideoToCloudinary(file: compressedVideo);
+      final videoUrl = await uploadVideoToSupabase(
+        file: compressedVideo,
+        videoId: videoID,
+      );
 
-      if (videoUrl == null) {
-        throw Exception("Video upload failed");
-      }
-
-      /// Thumbnail
-      File? thumbnailFile = await getThumbNailImage(videoFilePath);
-
-      if (thumbnailFile == null) {
-        throw Exception("Thumbnail generation failed");
-      }
-
-      /// Upload Thumbnail
-      String? thumbnailUrl = await uploadThumbnailToImgBB(thumbnailFile);
-
-      if (thumbnailUrl == null) {
-        throw Exception("Thumbnail upload failed");
-      }
+      final thumbnailUrl =
+          await uploadImageToImgBB(thumbnailFile!);
 
       return {
         "videoUrl": videoUrl,
-        "thumbnailUrl": thumbnailUrl,
+        "thumbnailUrl": thumbnailUrl!
       };
 
     } catch (e) {
-
-      debugPrint("Upload Flow Error: $e");
-
-      return {};
-
+      throw Exception("Upload Flow Error: $e");
     }
   }
 
-  /// SAVE TO SUPABASE
+  /// SAVE VIDEO INFO
   Future<void> saveVideoInformationToSupabaseDatabase({
 
     required String artistSongName,
@@ -214,27 +157,24 @@ class UploadController extends GetxController {
 
   }) async {
 
+    uploadProgress.value = 0;
+    isUploading.value = true;
+
+    simulateProgress();
+
     try {
 
-      uploadProgress.value = 0;
-      isUploading.value = true;
-
       final supabase = SupabaseAuth.supabase;
+
       const uuid = Uuid();
 
       String videoId = uuid.v4();
 
-      final result = await uploadVideoWithThumbnail(
-        videoId,
-        videoFilePath,
-      );
+      final result =
+          await uploadVideoWithThumbnail(videoId, videoFilePath);
 
-      String? videoUrl = result["videoUrl"];
-      String? thumbnailUrl = result["thumbnailUrl"];
-
-      if (videoUrl == null || thumbnailUrl == null) {
-        throw Exception("Upload failed");
-      }
+      final videoUrl = result["videoUrl"];
+      final thumbnailUrl = result["thumbnailUrl"];
 
       final user = supabase.auth.currentUser;
 
@@ -242,12 +182,12 @@ class UploadController extends GetxController {
         throw Exception("User not logged in");
       }
 
-      Video video = Video(
+      final video = Video(
         id: videoId,
         artistSongName: artistSongName,
         descriptionTags: descriptionTags,
-        videoUrl: videoUrl,
-        thumbnailUrl: thumbnailUrl,
+        videoUrl: videoUrl!,
+        thumbnailUrl: thumbnailUrl!,
         userId: user.id,
         likesCount: 0,
         commentsCount: 0,
@@ -275,9 +215,7 @@ class UploadController extends GetxController {
 
       Get.offAll(() => const HomeScreen());
 
-    } catch (error) {
-
-      debugPrint("Upload Error: $error");
+    } catch (e) {
 
       if (Get.isSnackbarOpen) {
         Get.closeCurrentSnackbar();
@@ -285,11 +223,11 @@ class UploadController extends GetxController {
 
       Get.snackbar(
         "Upload Failed",
-        error.toString(),
+        e.toString(),
         snackPosition: SnackPosition.TOP,
         backgroundColor: Colors.red.shade600,
         colorText: Colors.white,
-        duration: const Duration(seconds: 4),
+        duration: const Duration(seconds: 6),
       );
 
     } finally {

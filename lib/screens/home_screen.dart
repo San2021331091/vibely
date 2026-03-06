@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:vibely/authentication/supabase_auth.dart';
 import 'package:vibely/screens/following_video_screen.dart';
 import 'package:vibely/screens/for_you_video_screen.dart';
 import 'package:vibely/screens/profile_screen.dart';
@@ -14,14 +15,26 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
+  late final String currentUserId;
   int screenIndex = 0;
-  List<dynamic> screenlist = [
-    ForYouVideoScreen(),
-    SearchScreen(),
-    UploadVideoScreen(),
-    FollowingVideoScreen(),
-    ProfileScreen()
-  ];
+  late final List<Widget> screenList;
+
+  @override
+  void initState() {
+    super.initState();
+    // Make sure currentUserId is initialized when the widget is created
+    currentUserId = SupabaseAuth.supabase.auth.currentUser?.id ?? "";
+    
+    // Initialize the screen list with the proper userId
+    screenList = [
+      const ForYouVideoScreen(),
+      const SearchScreen(),
+      const UploadVideoScreen(),
+      const FollowingVideoScreen(),
+      ProfileScreen(userId: currentUserId),
+    ];
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -45,7 +58,7 @@ class _HomeScreenState extends State<HomeScreen> {
             icon: Icon(Icons.search, size: 30),
             label: "Discover",
           ),
-           BottomNavigationBarItem(
+          BottomNavigationBarItem(
             icon: UploadCustomIcon(),
             label: "Upload",
           ),
@@ -53,15 +66,13 @@ class _HomeScreenState extends State<HomeScreen> {
             icon: Icon(Icons.inbox_sharp, size: 30),
             label: "Following",
           ),
-
           BottomNavigationBarItem(
             icon: Icon(Icons.person, size: 30),
             label: "Me",
           ),
-        
         ],
       ),
-      body: screenlist[screenIndex],
+      body: screenList[screenIndex],
     );
   }
 }
